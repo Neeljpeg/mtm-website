@@ -54,7 +54,6 @@
     </style>
 </head>
 <body class="h-full text-gray-800">
-<!-- Modal for notifications -->
 <div id="notification-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
@@ -78,7 +77,6 @@
 
 
 <div class="flex h-full">
-    <!-- Static Sidebar for desktop -->
     <aside id="desktop-sidebar" class="hidden md:flex md:flex-col md:w-64 md:flex-shrink-0 bg-white border-r border-gray-200">
         <div class="h-0 flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <div class="flex items-center flex-shrink-0 px-4">
@@ -94,9 +92,7 @@
         </div>
     </aside>
 
-    <!-- Main content area -->
     <div class="flex flex-col w-0 flex-1 overflow-hidden bg-gray-50">
-        <!-- Mobile header -->
         <header class="md:hidden relative bg-white flex-shrink-0">
             <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
                 <div class="flex items-center">
@@ -114,7 +110,6 @@
             </div>
         </header>
 
-        <!-- Mobile Sidebar -->
         <div id="mobile-sidebar" class="hidden md:hidden" role="dialog" aria-modal="true">
             <div id="mobile-sidebar-backdrop" class="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
             <div class="fixed inset-0 flex z-40">
@@ -139,7 +134,6 @@
         </div>
 
         <main id="main-content" class="flex-1 relative overflow-y-auto focus:outline-none">
-            <!-- Content will be injected here -->
         </main>
     </div>
 </div>
@@ -149,10 +143,21 @@
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, doc, updateDoc, getDocs, addDoc, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // --- FIREBASE CONFIG (provided by environment) ---
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    // --- FIREBASE CONFIG (REPLACE WITH YOUR ACTUAL CONFIG) ---
+    // You MUST get your project-specific values from the Firebase Console
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY", // Example: "AIzaSyC7B-YOUR-ACTUAL-API-KEY"
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // Example: "my-art-program-123.firebaseapp.com"
+      projectId: "YOUR_PROJECT_ID", // Example: "my-art-program-123"
+      storageBucket: "YOUR_PROJECT_ID.appspot.com", // Example: "my-art-program-123.appspot.com"
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Example: "1234567890"
+      appId: "YOUR_APP_ID", // Example: "1:1234567890:web:abcdef1234567890"
+      // measurementId: "G-YOUR_MEASUREMENT_ID" // Include if present in your config
+    };
+
+    // The appId for collection path can be derived from firebaseConfig.appId
+    const appId = firebaseConfig.appId;
+    const initialAuthToken = null; // Keep this null unless you have a specific reason for a custom token
 
     // --- FIREBASE SERVICES ---
     let app, auth, db, eventsCollectionRef;
@@ -163,10 +168,12 @@
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
+        // Correctly use appId from firebaseConfig in the collection path
         eventsCollectionRef = collection(db, `/artifacts/${appId}/public/data/events`);
     } catch (e) {
         console.error("Firebase initialization failed:", e);
-        document.getElementById('main-content').innerHTML = `<div class="p-8 text-center text-red-500"><h1 class="text-2xl font-bold">Error</h1><p>Could not connect to the application services. Please try again later.</p><p class="text-sm mt-4">Details: ${e.message}</p></div>`;
+        // Display user-friendly error message on the page
+        document.getElementById('main-content').innerHTML = `<div class="p-8 text-center text-red-500"><h1 class="text-2xl font-bold">Error</h1><p>Could not connect to the application services. Please ensure your Firebase configuration is correct and try again later.</p><p class="text-sm mt-4">Details: ${e.message}</p></div>`;
     }
 
     // --- AUTHENTICATION ---
@@ -181,6 +188,7 @@
             console.log("Authentication successful. User UID:", auth.currentUser.uid);
         } catch (error) {
             console.error("Authentication failed:", error);
+            // Optionally, show a notification or message for auth failure
         }
     }
 
@@ -278,14 +286,18 @@
                 }
                 break;
             case 'materials': content = generateMaterialsPage(); break;
-            case 'schedule': generateSchedulePage(); return;
+            case 'schedule': generateSchedulePage(); return; // Schedule page handles its own content injection
             case 'gallery': content = generateGalleryPage(); break;
-            case 'admin': generateAdminPage(); return;
+            case 'admin': generateAdminPage(); return; // Admin page handles its own content injection
             default: content = generateHomePage();
         }
 
-        mainContent.innerHTML = `<div class="py-6"><div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">${content}</div></div>`;
-        attachContentEventListeners();
+        // Only inject HTML directly if the page doesn't handle it itself (like schedule/admin)
+        if (route.page !== 'schedule' && route.page !== 'admin') {
+            mainContent.innerHTML = `<div class="py-6"><div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">${content}</div></div>`;
+            attachContentEventListeners(); // Attach listeners after content is in DOM
+        }
+
 
         setTimeout(() => mainContent.classList.add('content-fade-enter-active'), 10);
         setTimeout(() => mainContent.classList.remove('content-fade-enter', 'content-fade-enter-active'), 300);
@@ -420,20 +432,20 @@
             });
         });
 
-        document.querySelectorAll('.level-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.level-tab').forEach(t => {
+            t.addEventListener('click', (e) => {
                 e.preventDefault();
                 const artist = findArtist(currentRoute.params.artistId);
                 const level = e.currentTarget.dataset.level;
 
-                document.getElementById('level-content-container').innerHTML = generateLevelContent(artist, level);
-
-                document.querySelectorAll('.level-tab').forEach(t => {
-                    t.classList.remove('border-blue-500', 'text-blue-600');
-                    t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                document.querySelectorAll('.level-tab').forEach(tab => {
+                    tab.classList.remove('border-blue-500', 'text-blue-600');
+                    tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
                 });
                 e.currentTarget.classList.add('border-blue-500', 'text-blue-600');
                 e.currentTarget.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+
+                document.getElementById('level-content-container').innerHTML = generateLevelContent(artist, level);
             });
         });
     }
@@ -448,6 +460,13 @@
     }
 
     function setupScheduleListener() {
+        // Ensure db is initialized before trying to use eventsCollectionRef
+        if (!db || !eventsCollectionRef) {
+            console.error("Firestore is not initialized for schedule listener.");
+            document.getElementById('event-list').innerHTML = `<p class="text-center text-red-500 py-8">Application services not available. Please refresh or check console for errors.</p>`;
+            return;
+        }
+
         eventsUnsubscribe = onSnapshot(eventsCollectionRef, (snapshot) => {
             const eventList = document.getElementById('event-list');
             if (snapshot.empty) {
@@ -486,13 +505,16 @@
     async function handleSignUp(e) {
         const eventId = e.target.dataset.eventId;
         const userId = auth.currentUser.uid;
-        if (!userId) return;
+        if (!userId) {
+            showNotification('Authentication Required', 'Please refresh the page to sign up.', 'error');
+            return;
+        }
         e.target.disabled = true; e.target.textContent = 'Signing up...';
         try {
             await runTransaction(db, async (transaction) => {
                 const eventDocRef = doc(db, `/artifacts/${appId}/public/data/events`, eventId);
                 const eventDoc = await transaction.get(eventDocRef);
-                if (!eventDoc.exists()) throw "Document does not exist!";
+                if (!eventDoc.exists()) throw new Error("Event does not exist!"); // Changed from string to Error object
 
                 const eventData = eventDoc.data();
                 const attendees = eventData.attendees || [];
@@ -523,6 +545,13 @@
     }
 
     function setupAdminListener() {
+        // Ensure db is initialized before trying to use eventsCollectionRef
+        if (!db || !eventsCollectionRef) {
+            console.error("Firestore is not initialized for admin listener.");
+            document.getElementById('admin-event-list').innerHTML = `<p class="text-center text-red-500 py-8">Application services not available. Please refresh or check console for errors.</p>`;
+            return;
+        }
+
          eventsUnsubscribe = onSnapshot(eventsCollectionRef, (snapshot) => {
             const adminEventList = document.getElementById('admin-event-list');
              if (snapshot.empty) {
@@ -560,12 +589,19 @@
     function attachAdminFormListeners() {
         const form = document.getElementById('admin-event-form');
         const cancelBtn = document.getElementById('cancel-edit-btn');
-        form.addEventListener('submit', handleFormSubmit);
-        cancelBtn.addEventListener('click', resetAdminForm);
+        if(form) form.addEventListener('submit', handleFormSubmit);
+        if(cancelBtn) cancelBtn.addEventListener('click', resetAdminForm);
     }
 
     async function handleFormSubmit(e) {
         e.preventDefault();
+
+        // Check if db is initialized
+        if (!db) {
+            showNotification('Error', 'Application services not ready. Please refresh.', 'error');
+            return;
+        }
+
         const eventId = document.getElementById('event-id').value;
         const eventData = {
             title: document.getElementById('event-title').value,
@@ -577,16 +613,16 @@
         };
 
         const submitBtn = document.getElementById('submit-event-btn');
-        submitBtn.disabled = true;
+        if(submitBtn) submitBtn.disabled = true;
 
         try {
             if (eventId) { // Update existing event
-                submitBtn.textContent = 'Updating...';
+                if(submitBtn) submitBtn.textContent = 'Updating...';
                 const eventDocRef = doc(db, `/artifacts/${appId}/public/data/events`, eventId);
                 await updateDoc(eventDocRef, eventData);
                 showNotification('Success', 'Event updated successfully.', 'success');
             } else { // Add new event
-                submitBtn.textContent = 'Adding...';
+                if(submitBtn) submitBtn.textContent = 'Adding...';
                 eventData.filled = 0;
                 eventData.attendees = [];
                 await addDoc(eventsCollectionRef, eventData);
@@ -595,7 +631,7 @@
             resetAdminForm();
         } catch (error) {
             console.error("Error submitting form:", error);
-            showNotification('Error', 'There was a problem saving the event.', 'error');
+            showNotification('Error', 'There was a problem saving the event: ' + (error.message || 'Unknown error'), 'error');
         } finally {
             if(submitBtn) submitBtn.disabled = false;
         }
@@ -604,7 +640,10 @@
     function handleEditEvent(e) {
         const eventId = e.target.dataset.eventId;
         const event = allEventsCache.find(ev => ev.id === eventId);
-        if (!event) return;
+        if (!event) {
+            showNotification('Error', 'Event not found for editing.', 'error');
+            return;
+        }
 
         document.getElementById('admin-form-title').textContent = 'Edit Event';
         document.getElementById('event-id').value = event.id;
@@ -628,11 +667,17 @@
             button.textContent = 'Confirm?';
             button.classList.add('bg-yellow-300', 'hover:bg-yellow-400');
             setTimeout(() => {
-                if (button) {
+                if (button && button.textContent === 'Confirm?') { // Only revert if not clicked again
                     button.textContent = 'Delete';
                     button.classList.remove('bg-yellow-300', 'hover:bg-yellow-400');
                 }
             }, 3000);
+            return;
+        }
+
+        // Check if db is initialized
+        if (!db) {
+            showNotification('Error', 'Application services not ready. Cannot delete event.', 'error');
             return;
         }
 
@@ -641,7 +686,7 @@
             showNotification('Success', 'Event deleted.', 'success');
         } catch (error) {
             console.error("Error deleting event:", error);
-            showNotification('Error', 'Failed to delete event.', 'error');
+            showNotification('Error', 'Failed to delete event: ' + (error.message || 'Unknown error'), 'error');
         }
     }
 
@@ -665,28 +710,98 @@
     // --- UTILITY AND INITIALIZATION ---
     async function seedDatabaseWithInitialEvents() {
          const initialEvents=[{type:"Training",title:"New Volunteer Training",date:"2024-08-20",time:"7:00pm - 8:00pm",location:"Room H6",slots:20,filled:15,attendees:[]},{type:"Training",title:"Van Gogh Lesson Prep",date:"2024-09-17",time:"7:00pm - 8:00pm",location:"Room H6",slots:20,filled:8,attendees:[]},{type:"Art Session",title:"Mrs. Davis' 3rd Grade - Monet",date:"2024-09-25",time:"10:00am - 11:30am",location:"Room 12",slots:3,filled:1,attendees:[]},{type:"Art Session",title:"Mr. Chen's 4th Grade - Monet",date:"2024-09-26",time:"1:00pm - 2:30pm",location:"Room 15",slots:3,filled:3,attendees:[]},{type:"Event",title:"School Art Showcase",date:"2025-05-02",time:"6:00pm - 8:00pm",location:"MP Room",slots:10,filled:2,role:"Setup Help",attendees:[]}];
-         try { const snapshot = await getDocs(eventsCollectionRef); if (snapshot.empty) { for (const event of initialEvents) { await addDoc(eventsCollectionRef, event); } } } catch (error) { console.error("Error seeding database:", error); }
+
+         // Ensure db and eventsCollectionRef are initialized before seeding
+         if (!db || !eventsCollectionRef) {
+             console.error("Firestore not initialized, cannot seed database.");
+             return;
+         }
+
+         try {
+             const snapshot = await getDocs(eventsCollectionRef);
+             if (snapshot.empty) {
+                 console.log("Database is empty, seeding with initial events...");
+                 for (const event of initialEvents) {
+                     await addDoc(eventsCollectionRef, event);
+                 }
+                 console.log("Initial events seeded successfully.");
+             } else {
+                 console.log("Database already contains events, skipping seeding.");
+             }
+         } catch (error) {
+             console.error("Error seeding database:", error);
+             showNotification('Data Error', 'Failed to seed initial events. Check console for details.', 'error');
+         }
     }
 
     function showNotification(title, message, type = 'success') {
-        const modal=document.getElementById('notification-modal'),titleEl=document.getElementById('notification-title'),messageEl=document.getElementById('notification-message'),iconEl=document.getElementById('notification-icon'),btnEl=document.getElementById('notification-close-btn');titleEl.textContent=title;messageEl.textContent=message;if(type==='error'){iconEl.className='mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100';iconEl.innerHTML=`<svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;btnEl.className='px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300';}else{iconEl.className='mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100';iconEl.innerHTML=`<svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;btnEl.className='px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300';}modal.classList.remove('hidden');
+        const modal=document.getElementById('notification-modal');
+        const titleEl=document.getElementById('notification-title');
+        const messageEl=document.getElementById('notification-message');
+        const iconEl=document.getElementById('notification-icon');
+        const btnEl=document.getElementById('notification-close-btn');
+
+        if (!modal || !titleEl || !messageEl || !iconEl || !btnEl) {
+            console.error("Notification elements not found. Cannot show notification.");
+            alert(`${title}: ${message}`); // Fallback to alert if elements are missing
+            return;
+        }
+
+        titleEl.textContent=title;
+        messageEl.textContent=message;
+
+        if(type==='error'){
+            iconEl.className='mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100';
+            iconEl.innerHTML=`<svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            btnEl.className='px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300';
+        }else{
+            iconEl.className='mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100';
+            iconEl.innerHTML=`<svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            btnEl.className='px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300';
+        }
+        modal.classList.remove('hidden');
     }
-    document.getElementById('notification-close-btn').addEventListener('click', () => document.getElementById('notification-modal').classList.add('hidden'));
+    document.getElementById('notification-close-btn').addEventListener('click', () => {
+        const modal = document.getElementById('notification-modal');
+        if(modal) modal.classList.add('hidden');
+    });
 
     function openMobileMenu() { mobileSidebar.classList.remove('hidden'); mobileSidebarBackdrop.classList.remove('hidden'); mobileSidebarPanel.classList.remove('-translate-x-full'); mobileSidebarPanel.classList.add('translate-x-0'); }
     function closeMobileMenu() { mobileSidebarPanel.classList.remove('translate-x-0'); mobileSidebarPanel.classList.add('-translate-x-full'); setTimeout(() => mobileSidebar.classList.add('hidden'), 300); }
 
     function waitForAuthAndLoad(callback) {
         if (isAuthReady) { callback(); }
-        else { const interval = setInterval(() => { if (isAuthReady) { clearInterval(interval); callback(); } }, 100); }
+        else {
+            const interval = setInterval(() => {
+                // Also check if Firebase 'db' object itself is initialized
+                if (isAuthReady && db) {
+                    clearInterval(interval);
+                    callback();
+                }
+            }, 100);
+            // Add a timeout to prevent infinite loop if auth never becomes ready
+            setTimeout(() => {
+                if (!isAuthReady || !db) {
+                    clearInterval(interval);
+                    console.warn("Timed out waiting for Firebase authentication/initialization.");
+                    // Optionally, show a persistent error message here
+                }
+            }, 5000); // 5 seconds timeout
+        }
     }
 
     async function initializeAppAndUI() {
-        if (!db) return;
+        // Run setupAuth first. The db variable will be set inside try/catch block if successful.
+        await setupAuth();
+        // Only proceed if db is successfully initialized
+        if (!db) {
+            console.error("Firebase database could not be initialized. Aborting UI initialization.");
+            return;
+        }
+
         mobileMenuButton.addEventListener('click', openMobileMenu);
         mobileMenuCloseButton.addEventListener('click', closeMobileMenu);
         mobileSidebarBackdrop.addEventListener('click', closeMobileMenu);
-        await setupAuth();
         updateNavLinks(currentRoute.page);
         renderPage(currentRoute);
     }
