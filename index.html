@@ -143,21 +143,10 @@
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, doc, updateDoc, getDocs, addDoc, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // --- FIREBASE CONFIG (REPLACE WITH YOUR ACTUAL CONFIG) ---
-    // You MUST get your project-specific values from the Firebase Console
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY", // Example: "AIzaSyC7B-YOUR-ACTUAL-API-KEY"
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // Example: "my-art-program-123.firebaseapp.com"
-      projectId: "YOUR_PROJECT_ID", // Example: "my-art-program-123"
-      storageBucket: "YOUR_PROJECT_ID.appspot.com", // Example: "my-art-program-123.appspot.com"
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Example: "1234567890"
-      appId: "YOUR_APP_ID", // Example: "1:1234567890:web:abcdef1234567890"
-      // measurementId: "G-YOUR_MEASUREMENT_ID" // Include if present in your config
-    };
-
-    // The appId for collection path can be derived from firebaseConfig.appId
-    const appId = firebaseConfig.appId;
-    const initialAuthToken = null; // Keep this null unless you have a specific reason for a custom token
+    // Use the global variables provided by the Canvas environment
+    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
     // --- FIREBASE SERVICES ---
     let app, auth, db, eventsCollectionRef;
@@ -196,25 +185,47 @@
     const tracks = [
         { id: 'a', name: 'Track A', artists: [
             { id: 'monet', name: 'Claude Monet', era: 'Impressionism', image: 'https://placehold.co/400x300/60a5fa/1e40af?text=Monet', focus: 'Light & Color' },
-            { id: 'rembrandt', name: 'Rembrandt', era: 'Baroque', image: 'https://placehold.co/400x300/f59e0b/78350f?text=Rembrandt', focus: 'Chiaroscuro' },
-            { id: 'cassatt', name: 'Mary Cassatt', era: 'Impressionism', image: 'https://placehold.co/400x300/f472b6/831843?text=Cassatt', focus: 'Everyday Life' },
-            { id: 'homer', name: 'Winslow Homer', era: 'Realism', image: 'https://placehold.co/400x300/38bdf8/0c4a6e?text=Homer', focus: 'Seascapes' },
-            { id: 'degas', name: 'Edgar Degas', era: 'Impressionism', image: 'https://placehold.co/400x300/c084fc/581c87?text=Degas', focus: 'Movement' },
-            { id: 'hokusai', name: 'Katsushika Hokusai', era: 'Ukiyo-e', image: 'https://placehold.co/400x300/2dd4bf/134e4a?text=Hokusai', focus: 'Woodblock Prints' },
-            { id: 'michelangelo', name: 'Michelangelo', era: 'High Renaissance', image: 'https://placehold.co/400x300/fca5a5/7f1d1d?text=Michelangelo', focus: 'Sculpture & Fresco' },
-        ]},
-        { id: 'b', name: 'Track B', artists: [
             { id: 'vangogh', name: 'Vincent van Gogh', era: 'Post-Impressionism', image: 'https://placehold.co/400x300/facc15/b45309?text=Van+Gogh', focus: 'Texture & Emotion' },
             { id: 'picasso', name: 'Pablo Picasso', era: 'Cubism', image: 'https://placehold.co/400x300/f87171/991b1b?text=Picasso', focus: 'Shape & Form' },
-            { id: 'okeefe', name: 'Georgia O\'Keeffe', era: 'American Modernism', image: 'https://placehold.co/400x300/f9a8d4/831843?text=O\'Keeffe', focus: 'Composition & Scale' },
-            { id: 'seurat', name: 'Georges Seurat', era: 'Pointillism', image: 'https://placehold.co/400x300/a78bfa/5b21b6?text=Seurat', focus: 'Dotted Color' },
-            { id: 'matisse', name: 'Henri Matisse', era: 'Fauvism', image: 'https://placehold.co/400x300/fb7185/881337?text=Matisse', focus: 'Bold Color' },
-            { id: 'klee', name: 'Paul Klee', era: 'Expressionism', image: 'https://placehold.co/400x300/818cf8/312e81?text=Klee', focus: 'Abstract Shapes' },
-            { id: 'wood', name: 'Grant Wood', era: 'American Gothic', image: 'https://placehold.co/400x300/6ee7b7/047857?text=Wood', focus: 'Regionalism' },
+            { id: 'homer', name: 'Winslow Homer', era: 'Realism', image: 'https://placehold.co/400x300/38bdf8/0c4a6e?text=Homer', focus: 'Seascapes' },
+            { id: 'cassatt', name: 'Mary Cassatt', era: 'Impressionism', image: 'https://placehold.co/400x300/f472b6/831843?text=Cassatt', focus: 'Everyday Life' },
         ]},
-        { id: 'c', name: 'Track C', artists: []}, // Placeholder for future artists
-        { id: 'd', name: 'Track D', artists: []},
-        { id: 'e', name: 'Track E', artists: []},
+        { id: 'b', name: 'Track B', artists: [
+            { id: 'remington', name: 'Frederic Remington', era: 'American West', image: 'https://placehold.co/400x300/a3e635/3f6212?text=Remington', focus: 'Western Art' },
+            { id: 'okeefe', name: 'Georgia O\'Keeffe', era: 'American Modernism', image: 'https://placehold.co/400x300/f9a8d4/831843?text=O\'Keeffe', focus: 'Composition & Scale' },
+            { id: 'hokusai', name: 'Katsushika Hokusai', era: 'Ukiyo-e', image: 'https://placehold.co/400x300/2dd4bf/134e4a?text=Hokusai', focus: 'Woodblock Prints' },
+            { id: 'matisse', name: 'Henri Matisse', era: 'Fauvism', image: 'https://placehold.co/400x300/fb7185/881337?text=Matisse', focus: 'Bold Color' },
+            { id: 'degas', name: 'Edgar Degas', era: 'Impressionism', image: 'https://placehold.co/400x300/c084fc/581c87?text=Degas', focus: 'Movement' },
+            { id: 'kahlo', name: 'Frida Kahlo', era: 'Surrealism', image: 'https://placehold.co/400x300/f0abfc/701a75?text=Frida', focus: 'Self-Portraiture' },
+            { id: 'wyeth', name: 'Andrew Wyeth', era: 'Realism', image: 'https://placehold.co/400x300/d4d4d4/404040?text=Wyeth', focus: 'Rural American Life' },
+        ]},
+        { id: 'c', name: 'Track C', artists: [
+            { id: 'miro', name: 'Joan Miró', era: 'Surrealism', image: 'https://placehold.co/400x300/a78bfa/5b21b6?text=Miró', focus: 'Biomorphic Shapes' },
+            { id: 'rembrandt', name: 'Rembrandt', era: 'Baroque', image: 'https://placehold.co/400x300/f59e0b/78350f?text=Rembrandt', focus: 'Chiaroscuro' },
+            { id: 'bonheur', name: 'Rosa Bonheur', era: 'Realism', image: 'https://placehold.co/400x300/6ee7b7/047857?text=Bonheur', focus: 'Animal Painting' },
+            { id: 'lawrence', name: 'Jacob Lawrence', era: 'Modern American', image: 'https://placehold.co/400x300/bae6fd/0369a1?text=Lawrence', focus: 'Narrative Series' },
+            { id: 'calder', name: 'Alexander Calder', era: 'Modern Sculpture', image: 'https://placehold.co/400x300/fca5a5/7f1d1d?text=Calder', focus: 'Mobiles & Stabiles' },
+            { id: 'gauguin', name: 'Paul Gauguin', era: 'Post-Impressionism', image: 'https://placehold.co/400x300/fbcfe8/be185d?text=Gauguin', focus: 'Symbolism & Color' },
+            { id: 'toulouse-lautrec', name: 'Henri de Toulouse-Lautrec', era: 'Post-Impressionism', image: 'https://placehold.co/400x300/c4b5fd/6d28d9?text=Toulouse-Lautrec', focus: 'Poster Art' },
+        ]},
+        { id: 'd', name: 'Track D', artists: [
+            { id: 'cezanne', name: 'Paul Cézanne', era: 'Post-Impressionism', image: 'https://placehold.co/400x300/a5b4fc/4338ca?text=Cézanne', focus: 'Geometric Forms' },
+            { id: 'renoir', name: 'Pierre-Auguste Renoir', era: 'Impressionism', image: 'https://placehold.co/400x300/f472b6/831843?text=Renoir', focus: 'Figures & Light' },
+            { id: 'chagall', name: 'Marc Chagall', era: 'Cubism / Surrealism', image: 'https://placehold.co/400x300/fcd34d/b45309?text=Chagall', focus: 'Symbolic Imagery' },
+            { id: 'klee', name: 'Paul Klee', era: 'Expressionism', image: 'https://placehold.co/400x300/818cf8/312e81?text=Klee', focus: 'Abstract Shapes' },
+            { id: 'davinci', name: 'Leonardo da Vinci', era: 'High Renaissance', image: 'https://placehold.co/400x300/93c5fd/1e40af?text=Da+Vinci', focus: 'Anatomy & Invention' },
+            { id: 'seurat', name: 'Georges Seurat', era: 'Pointillism', image: 'https://placehold.co/400x300/a78bfa/5b21b6?text=Seurat', focus: 'Dotted Color' },
+            { id: 'ringgold', name: 'Faith Ringgold', era: 'Contemporary', image: 'https://placehold.co/400x300/fbcfe8/be185d?text=Ringgold', focus: 'Story Quilts' },
+        ]},
+        { id: 'e', name: 'Track E', artists: [
+            { id: 'warhol', name: 'Andy Warhol', era: 'Pop Art', image: 'https://placehold.co/400x300/a3e635/3f6212?text=Warhol', focus: 'Repetition & Consumerism' },
+            { id: 'hopper', name: 'Edward Hopper', era: 'American Realism', image: 'https://placehold.co/400x300/38bdf8/0c4a6e?text=Hopper', focus: 'Urban Isolation' },
+            { id: 'rockwell', name: 'Norman Rockwell', era: 'American Realism', image: 'https://placehold.co/400x300/dbeafe/1e3a8a?text=Rockwell', focus: 'Everyday Life' },
+            { id: 'rousseau', name: 'Henri Rousseau', era: 'Naïve Art', image: 'https://placehold.co/400x300/c084fc/581c87?text=Rousseau', focus: 'Jungle Scenes' },
+            { id: 'klimt', name: 'Gustav Klimt', era: 'Symbolism / Art Nouveau', image: 'https://placehold.co/400x300/fb7185/881337?text=Klimt', focus: 'Gold Leaf & Patterns' },
+            { id: 'michelangelo', name: 'Michelangelo', era: 'High Renaissance', image: 'https://placehold.co/400x300/fca5a5/7f1d1d?text=Michelangelo', focus: 'Sculpture & Fresco' },
+            { id: 'martinez', name: 'Maria Martinez', era: 'Native American Pottery', image: 'https://placehold.co/400x300/f0abfc/701a75?text=Martinez', focus: 'Pueblo Pottery' },
+        ]},
     ];
     function findArtist(artistId) {
         for (const track of tracks) {
@@ -380,24 +391,24 @@
         return `
             <div class="space-y-8">
                 <div class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">1. Introducing the Master (${level})</h2>
-                    <p class="text-gray-600 mb-4">This is the ${level} presentation to introduce the artist, their life, and their most famous works.</p>
+                    <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">1. Introducing the Master: Art & History Slideshow (${level})</h2>
+                    <p class="text-gray-600 mb-4">Explore a visual journey through ${artist.name}'s life and iconic artwork, accompanied by historical context.</p>
                     <button class="w-full text-left p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
-                        <span class="font-semibold text-blue-800">▶️ View ${level} Presentation</span>
+                        <span class="font-semibold text-blue-800">▶️ View ${level} Slideshow</span>
                     </button>
                 </div>
                  <div class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">2. Learning from the Master (${level})</h2>
-                    <p class="text-gray-600 mb-4">Here, find materials on techniques for ${artist.focus.toLowerCase()} at the ${level} level.</p>
+                    <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">2. Learning from the Master: Artist History PDF (${level})</h2>
+                    <p class="text-gray-600 mb-4">Download a detailed PDF document covering the complete history of ${artist.name} and their artistic journey.</p>
                      <button class="w-full text-left p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition mt-2">
-                        <span class="font-semibold text-purple-800">📄 Download ${level} PDF: Technique Guide</span>
+                        <span class="font-semibold text-purple-800">📄 Download ${level} Artist History PDF</span>
                     </button>
                 </div>
                  <div class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">3. Working with the Master (${level})</h2>
-                    <p class="text-gray-600 mb-4">Step-by-step instructions for the ${level} art project.</p>
+                    <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">3. Working with the Master: Art Project Training Video (${level})</h2>
+                    <p class="text-gray-600 mb-4">Watch a step-by-step training video guiding you through the art project inspired by ${artist.name}'s techniques at the ${level} level.</p>
                      <button class="w-full text-left p-4 bg-green-50 rounded-lg hover:bg-green-100 transition mt-2">
-                        <span class="font-semibold text-green-800">🎨 View ${level} Project Instructions</span>
+                        <span class="font-semibold text-green-800">🎬 View ${level} Art Project Training Video</span>
                     </button>
                 </div>
             </div>
@@ -413,7 +424,7 @@
                 e.preventDefault();
                 const page = e.currentTarget.dataset.page;
                 const artistId = e.currentTarget.dataset.artistId;
-                const route = { page: page, params: { artistId: artistId } };
+                const route = { page: page, params: artistId ? { artistId: artistId } : {} };
                 loadPage(route);
             });
         });
@@ -455,7 +466,8 @@
         const container = document.createElement('div');
         container.className = 'py-6';
         container.innerHTML = `<div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8"><h1 class="text-3xl font-bold text-gray-900 mb-2">Schedule & Sign-up</h1><p class="text-gray-600 mb-6">Find training dates and sign up to help in a classroom. Your help makes all the difference!</p><div id="event-list" class="space-y-4"><div class="text-center py-8"><p class="text-gray-500">Loading schedule...</p></div></div></div>`;
-        mainContent.innerHTML = ''; mainContent.appendChild(container);
+        mainContent.innerHTML = ''; // Clear previous content
+        mainContent.appendChild(container);
         waitForAuthAndLoad(setupScheduleListener);
     }
 
@@ -471,7 +483,8 @@
             const eventList = document.getElementById('event-list');
             if (snapshot.empty) {
                  eventList.innerHTML = `<p class="text-center text-gray-500 py-8">No events scheduled yet. Check back soon!</p>`;
-                 seedDatabaseWithInitialEvents(); return;
+                 seedDatabaseWithInitialEvents(); // Attempt to seed if empty
+                 return;
             }
             allEventsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderPublicEvents(allEventsCache);
@@ -497,7 +510,7 @@
             } else {
                 buttonHtml = `<button data-event-id="${e.id}" class="signup-btn w-full px-4 py-2 text-sm font-semibold text-white rounded-md transition-colors bg-blue-600 hover:bg-blue-700">Sign Up</button>`;
             }
-            return `<div class="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"><div class="flex-grow"><div class="flex items-center gap-3 mb-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${e.type==='Training' ? 'bg-purple-100 text-purple-800' : e.type==='Art Session' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">${e.type}</span><p class="text-sm text-gray-500">${e.date} &bull; ${e.time}</p></div><h3 class="font-bold text-lg text-gray-900">${e.title}</h3><p class="text-sm text-gray-600">Location: ${e.location} ${e.role ? `(${e.role})` : ''}</p></div><div class="w-full sm:w-auto flex-shrink-0"><div class="flex items-center gap-2 text-sm text-gray-600 mb-1"><svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.992 9.992 0 0010 12c-2.31 0-4.438.784-6.131 2.095z" /></svg><span>${e.filled} / ${e.slots} filled</span></div><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2"><div class="bg-blue-600 h-2.5 rounded-full" style="width: ${percentage}%"></div></div>${buttonHtml}</div></div>`;
+            return `<div class="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"><div class="flex-grow"><div class="flex items-center gap-3 mb-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${e.type==='Training' ? 'bg-purple-100 text-purple-800' : e.type==='Art Session' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">${e.type}</span><p class="text-sm text-gray-500">${e.date} &bull; ${e.time}</p></div><h3 class="font-bold text-lg text-gray-900">${e.title}</h3><p class="text-sm text-gray-600">Location: ${e.location} ${e.role ? `(${e.role})` : ''}</p></div><div class="w-full sm:w-auto flex-shrink-0"><div class="flex items-center gap-2 text-sm text-gray-600 mb-1"><svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41-1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.992 9.992 0 0010 12c-2.31 0-4.438.784-6.131 2.095z" /></svg><span>${e.filled} / ${e.slots} filled</span></div><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2"><div class="bg-blue-600 h-2.5 rounded-full" style="width: ${percentage}%"></div></div>${buttonHtml}</div></div>`;
         }).join('');
         document.querySelectorAll('.signup-btn').forEach(button => button.addEventListener('click', handleSignUp));
     }
@@ -514,7 +527,7 @@
             await runTransaction(db, async (transaction) => {
                 const eventDocRef = doc(db, `/artifacts/${appId}/public/data/events`, eventId);
                 const eventDoc = await transaction.get(eventDocRef);
-                if (!eventDoc.exists()) throw new Error("Event does not exist!"); // Changed from string to Error object
+                if (!eventDoc.exists()) throw new Error("Event does not exist!");
 
                 const eventData = eventDoc.data();
                 const attendees = eventData.attendees || [];
@@ -539,7 +552,8 @@
         const container = document.createElement('div');
         container.className = 'py-6';
         container.innerHTML = `<div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8"><h1 class="text-3xl font-bold text-gray-900 mb-6">Admin Panel</h1><div class="bg-white p-6 rounded-lg shadow mb-8"><h2 id="admin-form-title" class="text-2xl font-bold text-gray-800 mb-4">Add New Event</h2><form id="admin-event-form" class="grid grid-cols-1 gap-6 sm:grid-cols-2"><input type="hidden" id="event-id"><div class="sm:col-span-2"><label for="event-title" class="form-label">Event Title</label><input type="text" id="event-title" class="form-input" required></div><div><label for="event-date" class="form-label">Date</label><input type="date" id="event-date" class="form-input" required></div><div><label for="event-time" class="form-label">Time</label><input type="text" id="event-time" placeholder="e.g., 7:00pm - 8:00pm" class="form-input" required></div><div><label for="event-location" class="form-label">Location</label><input type="text" id="event-location" class="form-input" required></div><div><label for="event-slots" class="form-label">Volunteer Slots</label><input type="number" id="event-slots" value="1" min="0" class="form-input" required></div><div class="sm:col-span-2"><label for="event-type" class="form-label">Event Type</label><select id="event-type" class="form-input"><option>Art Session</option><option>Training</option><option>Event</option></select></div><div class="sm:col-span-2 text-right"><button type="button" id="cancel-edit-btn" class="hidden mr-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">Cancel</button><button type="submit" id="submit-event-btn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700">Add Event</button></div></form></div><h2 class="text-2xl font-bold text-gray-800 mb-4">Manage Events</h2><div id="admin-event-list" class="space-y-4 bg-white p-4 rounded-lg shadow"><div class="text-center py-8"><p class="text-gray-500">Loading events...</p></div></div></div>`;
-        mainContent.innerHTML = ''; mainContent.appendChild(container);
+        mainContent.innerHTML = ''; // Clear previous content
+        mainContent.appendChild(container);
         attachAdminFormListeners();
         waitForAuthAndLoad(setupAdminListener);
     }
@@ -743,7 +757,6 @@
 
         if (!modal || !titleEl || !messageEl || !iconEl || !btnEl) {
             console.error("Notification elements not found. Cannot show notification.");
-            alert(`${title}: ${message}`); // Fallback to alert if elements are missing
             return;
         }
 
@@ -766,14 +779,33 @@
         if(modal) modal.classList.add('hidden');
     });
 
-    function openMobileMenu() { mobileSidebar.classList.remove('hidden'); mobileSidebarBackdrop.classList.remove('hidden'); mobileSidebarPanel.classList.remove('-translate-x-full'); mobileSidebarPanel.classList.add('translate-x-0'); }
-    function closeMobileMenu() { mobileSidebarPanel.classList.remove('translate-x-0'); mobileSidebarPanel.classList.add('-translate-x-full'); setTimeout(() => mobileSidebar.classList.add('hidden'), 300); }
+    function openMobileMenu() {
+        mobileSidebar.classList.remove('hidden');
+        setTimeout(() => {
+            mobileSidebarBackdrop.classList.remove('opacity-0');
+            mobileSidebarBackdrop.classList.add('opacity-75');
+            mobileSidebarPanel.classList.remove('-translate-x-full');
+            mobileSidebarPanel.classList.add('translate-x-0');
+        }, 10);
+    }
 
+    function closeMobileMenu() {
+        mobileSidebarBackdrop.classList.remove('opacity-75');
+        mobileSidebarBackdrop.classList.add('opacity-0');
+        mobileSidebarPanel.classList.remove('translate-x-0');
+        mobileSidebarPanel.classList.add('-translate-x-full');
+        setTimeout(() => {
+            mobileSidebar.classList.add('hidden');
+        }, 300);
+    }
+
+    // Helper function to wait for Firebase Auth readiness
     function waitForAuthAndLoad(callback) {
-        if (isAuthReady) { callback(); }
-        else {
+        // We'll check for both isAuthReady and db initialization
+        if (isAuthReady && db) {
+            callback();
+        } else {
             const interval = setInterval(() => {
-                // Also check if Firebase 'db' object itself is initialized
                 if (isAuthReady && db) {
                     clearInterval(interval);
                     callback();
@@ -783,13 +815,14 @@
             setTimeout(() => {
                 if (!isAuthReady || !db) {
                     clearInterval(interval);
-                    console.warn("Timed out waiting for Firebase authentication/initialization.");
-                    // Optionally, show a persistent error message here
+                    console.warn("Timed out waiting for Firebase authentication/initialization. Please check your Firebase configuration and network connection.");
+                    showNotification('Connection Error', 'Failed to connect to the application services. Please refresh the page.', 'error');
                 }
-            }, 5000); // 5 seconds timeout
+            }, 10000); // 10 seconds timeout
         }
     }
 
+    // Main initialization function to run on DOMContentLoaded
     async function initializeAppAndUI() {
         // Run setupAuth first. The db variable will be set inside try/catch block if successful.
         await setupAuth();
@@ -806,7 +839,11 @@
         renderPage(currentRoute);
     }
 
-    initializeAppAndUI();
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initializeAppAndUI();
+    });
+
 </script>
 </body>
 </html>
